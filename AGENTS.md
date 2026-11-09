@@ -142,7 +142,9 @@ Set `label` to `'<City> day and night'`; never leave the engine default.
   supplies `detail.night`; `scrub` supplies `position`, `hour`, and `dark`.
 - Drive page colour, clock, and phase from `scrub`; save the selected day/night
   state from `change`. Keep storage keys distinct between cities.
-- Keep the layout responsive and respect reduced motion. Do not replace the
+- The lens always travels with its full spring, squash and lift, even when the
+  browser asks for reduced motion; that preference only stills the city's own
+  life (actors, flicker, weather). Keep the layout responsive. Do not replace the
   interactive canvas with a screenshot or hide the controls to make a demo fit.
 
 ## Validate before calling it finished

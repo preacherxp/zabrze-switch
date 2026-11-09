@@ -1810,8 +1810,9 @@ void main() {
         this.branch = 'pm';
         this.wake();
       }
+      // The lens always travels; reduced motion only stills the city's own life
       setChecked(night, animate) {
-        if (animate && !this.calm.matches) {
+        if (animate) {
           this.beginTravel();
           this.target = night ? 1 : 0;
           this.moving = true;
@@ -2172,51 +2173,37 @@ void main() {
           this.x = mix(this.x, want, clamp(dt * 24));
           this.v = (this.x - before) / Math.max(dt, 1 / 240);
         } else if (this.moving) {
-          if (calm) {
+          const omega = 13;
+          const zeta = 0.78;
+          const acc = omega * omega * (this.target - this.x) - 2 * zeta * omega * this.v;
+          this.v += acc * dt;
+          this.x += this.v * dt;
+          // Bumps off the ends and squashes against them
+          if (this.x > 1) {
+            this.x = 1;
+            this.stretchV -= Math.abs(this.v) * 1.5;
+            this.v *= -0.22;
+          } else if (this.x < 0) {
+            this.x = 0;
+            this.stretchV -= Math.abs(this.v) * 1.5;
+            this.v *= -0.22;
+          }
+          if (Math.abs(this.target - this.x) < 0.002 && Math.abs(this.v) < 0.03) {
             if (this.target === 0 || this.target === 1) this.commit(this.target === 1);
             else {
               this.x = this.target;
               this.v = 0;
               this.moving = false;
             }
-          } else {
-            const omega = 13;
-            const zeta = 0.78;
-            const acc = omega * omega * (this.target - this.x) - 2 * zeta * omega * this.v;
-            this.v += acc * dt;
-            this.x += this.v * dt;
-            // Bumps off the ends and squashes against them
-            if (this.x > 1) {
-              this.x = 1;
-              this.stretchV -= Math.abs(this.v) * 1.5;
-              this.v *= -0.22;
-            } else if (this.x < 0) {
-              this.x = 0;
-              this.stretchV -= Math.abs(this.v) * 1.5;
-              this.v *= -0.22;
-            }
-            if (Math.abs(this.target - this.x) < 0.002 && Math.abs(this.v) < 0.03) {
-              if (this.target === 0 || this.target === 1) this.commit(this.target === 1);
-              else {
-                this.x = this.target;
-                this.v = 0;
-                this.moving = false;
-              }
-            }
           }
         } else if (this.x >= 1 && !calm && this.nightHour < 26) {
           // The clock keeps running through the night
           this.nightHour += dt / 90;
         }
-        if (!calm) {
-          const goal = clamp(Math.abs(this.v) * 0.4);
-          this.stretchV += (190 * (goal - this.stretch) - 13 * this.stretchV) * dt;
-          this.stretch += this.stretchV * dt;
-          this.lift += (this.liftTarget - this.lift) * clamp(dt * 14);
-        } else {
-          this.stretch = 0;
-          this.lift = this.liftTarget;
-        }
+        const goal = clamp(Math.abs(this.v) * 0.4);
+        this.stretchV += (190 * (goal - this.stretch) - 13 * this.stretchV) * dt;
+        this.stretch += this.stretchV * dt;
+        this.lift += (this.liftTarget - this.lift) * clamp(dt * 14);
         this.hurry = Math.max(this.hurry - dt * 1.4, clamp(Math.abs(this.v) * 0.6));
       }
 
