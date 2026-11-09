@@ -195,6 +195,10 @@ Use a short, repeatable check and keep evidence of what actually ran.
 
 ### Shareable animation
 
+- Each city repository has an **Export video** workflow. On every push to `main`
+  that changes the engine, scene or demo, it runs `tools/capture-switch.cjs`,
+  encodes `<city>-day-night-60fps.mp4` and commits it if it changed. Do not commit
+  hand-made exports over it; run the workflow manually to refresh a video.
 - When asked for a switch GIF/video, capture the **actual browser-rendered full
   control**, including the frame, glass lens, its motion, and changing city light.
   A raw city-panorama animation is a different artifact.

@@ -1,0 +1,54 @@
+# Records the full switch whenever the scene changes and commits the MP4 the demo links to.
+name: Export video
+on:
+  push:
+    branches: [main]
+    paths: ['city-switch.js', 'zabrze.js', 'index.html', 'tools/capture-switch.cjs', '.github/workflows/export-video.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+concurrency:
+  group: export-video
+  cancel-in-progress: true
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: Install browser and encoder
+        run: |
+          npm install --prefix "$RUNNER_TEMP/recording" playwright@1.56.1
+          "$RUNNER_TEMP/recording/node_modules/.bin/playwright" install --with-deps chromium
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+      - name: Review and capture the full switch
+        run: |
+          python3 -m http.server 8080 > "$RUNNER_TEMP/http.log" 2>&1 &
+          CAPTURE_ROOT=. CAPTURE_PATH=/ NODE_PATH="$RUNNER_TEMP/recording/node_modules" node tools/capture-switch.cjs zabrze
+          ffmpeg -y -framerate 60 -i capture/zabrze/frames/%03d.png -c:v libx264 -crf 18 -pix_fmt yuv420p -movflags +faststart zabrze-day-night-60fps.mp4
+          ffprobe -v error -select_streams v -show_entries stream=codec_name,width,height,r_frame_rate,nb_frames -of csv=p=0 zabrze-day-night-60fps.mp4
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: zabrze-review
+          path: |
+            capture/zabrze/*.png
+            capture/zabrze/*.json
+          retention-days: 7
+      - name: Commit the video if it changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git add zabrze-day-night-60fps.mp4
+          if git diff --cached --quiet; then echo "Video unchanged"; exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m "Export the day/night video for ${GITHUB_SHA::7}"
+          git pull --rebase origin main
+          git push origin HEAD:main
+          gh api -X POST "repos/$GITHUB_REPOSITORY/pages/builds" || echo "Pages build request failed; the push may already have triggered one"
