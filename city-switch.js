@@ -12,6 +12,8 @@
  *   'change' event             detail: { night }
  *   'scrub' event              detail: { position, hour, dark }, fires while the hours move
  *
+ *   <city-readout city="Name"></city-readout> after a switch shows its clock, city and phase
+ *
  * Derived from tokyo-switch.js. Idea after "住人のいるスイッチ" by @Lattice_Node (ludion.ai/p/toggle-daylight, MIT).
  *
  * Scene contract, for CitySwitch.define(tag, scene):
@@ -2173,7 +2175,8 @@ void main() {
           this.x = mix(this.x, want, clamp(dt * 24));
           this.v = (this.x - before) / Math.max(dt, 1 / 240);
         } else if (this.moving) {
-          const omega = 13;
+          // A third of the original stiffness: the same eased glide, three times as long (about 1.2 s)
+          const omega = 13 / 3;
           const zeta = 0.78;
           const acc = omega * omega * (this.target - this.x) - 2 * zeta * omega * this.v;
           this.v += acc * dt;
@@ -2341,6 +2344,82 @@ void main() {
     if (!customElements.get(tag)) customElements.define(tag, CitySwitch);
     return CitySwitch;
   };
+
+  // ---- Readout: the clock, city and phase under a switch, as a small pixel LCD.
+  //   <city-readout city="Gliwice"></city-readout>    follows the switch just before it
+  //   <city-readout for="some-id"> or el.switch = s   follows another switch
+  // Size and type follow custom properties, so pages keep their own layout:
+  //   --readout-gap, --readout-padding, --readout-max-width, --readout-clock-font,
+  //   --readout-clock-spacing, --readout-place-font, --readout-place-case, --readout-place-spacing
+  const READOUT_CSS = `
+:host {
+  display: flex; align-items: baseline; justify-content: center; gap: var(--readout-gap, 20px);
+  max-width: var(--readout-max-width, calc(100vw - 48px)); padding: var(--readout-padding, 12px 16px); box-sizing: border-box;
+  color: #f6f2e9; background-color: #0e1a22;
+  background-image: repeating-linear-gradient(0deg, #ffffff07 0 1px, transparent 1px 3px), linear-gradient(#16262f, #0b151c);
+  box-shadow: 0 -3px 0 0 #050d13, 0 3px 0 0 #050d13, -3px 0 0 0 #050d13, 3px 0 0 0 #050d13,
+    inset 0 3px 0 #ffffff12, inset 3px 0 0 #ffffff0a, inset 0 -3px 0 #00000059, inset -3px 0 0 #00000038;
+}
+:host([hidden]) { display: none; }
+.clock {
+  position: relative; z-index: 0; font: var(--readout-clock-font, 500 44px/1.1 ui-monospace, "SF Mono", Menlo, monospace);
+  font-variant-numeric: tabular-nums; letter-spacing: var(--readout-clock-spacing, -.01em);
+  color: var(--led, #f3ecd8); text-shadow: 2px 2px 0 #03080c; white-space: nowrap;
+}
+/* Unlit segments behind the digits, like a pocket LCD */
+.clock::before { content: '88:88'; position: absolute; inset: 0; z-index: -1; color: #fff; opacity: .06; text-shadow: none; }
+.colon { animation: colon 1.2s steps(1) infinite; }
+@keyframes colon { 50% { opacity: .25; } }
+.place { font: var(--readout-place-font, inherit); font-size: var(--readout-place-size, 15px); text-transform: var(--readout-place-case, none); letter-spacing: var(--readout-place-spacing, normal); }
+b { display: block; font-weight: 600; text-shadow: 1px 1px 0 #03080c; }
+.phase { position: relative; color: #c6d1d5; }
+/* A pixel lamp in the gap before the phase, lit in the colour of the hour */
+.phase::before { content: ''; position: absolute; left: -12px; top: 50%; width: 6px; height: 6px; margin-top: -3px; background: var(--led, #f3ecd8); box-shadow: 0 0 0 1px #03080c; }
+@media (prefers-reduced-motion: reduce) { .colon { animation: none; } }
+`;
+  const phaseOf = (h) => (h >= 5 && h < 7 ? 'Dawn' : h >= 7 && h < 10 ? 'Morning' : h >= 10 && h < 16 ? 'Daytime' : h >= 16 && h < 18 ? 'Golden hour' : h >= 18 && h < 19.5 ? 'Signs coming on' : 'Night');
+  class CityReadout extends HTMLElement {
+    static get observedAttributes() { return ['city', 'for']; }
+    constructor() {
+      super();
+      const root = this.attachShadow({ mode: 'open' });
+      root.innerHTML = `<style>${READOUT_CSS}</style><span class="clock" part="clock">12:00</span><span class="place" part="place"><b part="city"></b><span class="phase" part="phase">Daytime</span></span>`;
+      this.clock = root.querySelector('.clock');
+      this.cityName = root.querySelector('b');
+      this.phase = root.querySelector('.phase');
+      this.onScrub = (event) => this.show(event.detail);
+    }
+    connectedCallback() {
+      // The switch announces its state itself; the readout is decoration
+      this.setAttribute('aria-hidden', 'true');
+      if (!this._switch) this.switch = this.hasAttribute('for') ? document.getElementById(this.getAttribute('for')) : this.previousElementSibling;
+    }
+    attributeChangedCallback(name, before, value) {
+      if (name === 'city') this.cityName.textContent = value || '';
+      else if (this.isConnected) this.switch = document.getElementById(value);
+    }
+    get switch() { return this._switch || null; }
+    set switch(element) {
+      this._switch?.removeEventListener('scrub', this.onScrub);
+      this._switch = element || null;
+      if (!element) return;
+      element.addEventListener('scrub', this.onScrub);
+      // Ask a switch that is already running for its current hour
+      if (typeof element.emitScrub === 'function') { element.lastHour = undefined; element.emitScrub(); }
+    }
+    show({ hour, dark }) {
+      const hh = String(Math.floor(hour)).padStart(2, '0'), mm = String(Math.floor((hour % 1) * 60)).padStart(2, '0');
+      if (this.clock.dataset.time !== hh + mm) {
+        this.clock.dataset.time = hh + mm;
+        this.clock.innerHTML = `${hh}<span class="colon">:</span>${mm}`;
+      }
+      this.phase.textContent = phaseOf(hour);
+      // Cream by day, amber by night, as rgb() so contrast checks can read it
+      const led = [[243, 255], [236, 201], [216, 106]].map(([day, night]) => Math.round(day + (night - day) * dark));
+      this.style.setProperty('--led', `rgb(${led.join(', ')})`);
+    }
+  }
+  if (!customElements.get('city-readout')) customElements.define('city-readout', CityReadout);
 
   window.CitySwitch = { define, PAD_X, PAD_Y, BW, BH, BAYER, clamp, mix, smooth, rng };
 })();

@@ -71,9 +71,10 @@ fs.mkdirSync(`${out}/frames`, { recursive: true });
             const linear = rgb.map((value) => value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4);
             return linear[0] * .2126 + linear[1] * .7152 + linear[2] * .0722;
           };
-          const background = lightness(getComputedStyle(document.querySelector('.read')).backgroundColor);
-          return ['.clock', '.place b', '.place span'].map((selector) => {
-            const foreground = lightness(getComputedStyle(document.querySelector(selector)).color);
+          const readout = document.querySelector('city-readout');
+          const background = lightness(getComputedStyle(readout).backgroundColor);
+          return ['.clock', 'b', '.phase'].map((selector) => {
+            const foreground = lightness(getComputedStyle(readout.shadowRoot.querySelector(selector)).color);
             return (Math.max(background, foreground) + .05) / (Math.min(background, foreground) + .05);
           });
         });

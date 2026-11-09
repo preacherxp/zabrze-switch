@@ -140,8 +140,10 @@ Set `label` to `'<City> day and night'`; never leave the engine default.
   cancellation, and lost capture must leave the lens usable.
 - The element API is `checked`, `position`, and `jump(night)`. The `change` event
   supplies `detail.night`; `scrub` supplies `position`, `hour`, and `dark`.
-- Drive page colour, clock, and phase from `scrub`; save the selected day/night
-  state from `change`. Keep storage keys distinct between cities.
+- Show the clock, city and phase with the engine's `<city-readout city="Name">`
+  placed after the switch (or `for="id"`); size it with its `--readout-*` custom
+  properties, not a hand-built copy. Drive page colour from `scrub` and save the
+  selected day/night state from `change`. Keep storage keys distinct between cities.
 - The lens always travels with its full spring, squash and lift, even when the
   browser asks for reduced motion; that preference only stills the city's own
   life (actors, flicker, weather). Keep the layout responsive. Do not replace the

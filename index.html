@@ -30,11 +30,6 @@
   .zabrze { --paper: #e8e6dc; --night: #14212a; --dusk-colour: #967c69; }
 
   .switch { width: min(680px, calc(100vw - 96px)); display: block; }
-  .read { display: flex; gap: 20px; align-items: baseline; justify-content: center; max-width: calc(100vw - 48px); padding: 12px 16px; border-radius: 12px; background: #13212c; color: #f6f2e9; }
-  .clock { font: 500 44px/1.1 ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
-  .place { font-size: 15px; }
-  .place b { display: block; font-weight: 600; }
-  .place span { color: #c6d1d5; }
   footer {
     background: #08080f; color: #8b86a3; text-align: center; padding: 40px 24px 56px; font-size: 14px;
   }
@@ -45,23 +40,18 @@
 <body>
 <section class="zabrze" aria-label="Contemporary Zabrze: Restored Carboneum tower, Carnall heritage site, Arena Zabrze and Dom Muzyki i Tańca.">
   <zabrze-switch class="switch"></zabrze-switch>
-  <div class="read" aria-hidden="true"><div class="clock">12:00</div><div class="place"><b>Zabrze</b><span>Daytime</span></div></div>
+  <city-readout city="Zabrze"></city-readout>
 </section>
 <footer><p>Carboneum · Carnall · Arena Zabrze · Dom Muzyki i Tańca</p>Drag to move through the hours. Tap to switch. <kbd>←</kbd> <kbd>→</kbd> step, <kbd>Space</kbd> toggles. <a href="zabrze-day-night-60fps.mp4" download>Download 60 fps MP4</a></footer>
 <script src="city-switch.js"></script>
 <script src="zabrze.js"></script>
 <script>
-  const phaseOf = (h) => (h >= 5 && h < 7 ? 'Dawn' : h >= 7 && h < 10 ? 'Morning' : h >= 10 && h < 16 ? 'Daytime' : h >= 16 && h < 18 ? 'Golden hour' : h >= 18 && h < 19.5 ? 'Signs coming on' : 'Night');
   for (const section of document.querySelectorAll('section')) {
     const toggle = section.querySelector('.switch');
-    const clock = section.querySelector('.clock');
-    const phase = section.querySelector('.place span');
     const key = `city-switch:${section.className}`;
     toggle.addEventListener('scrub', (e) => {
-      const { hour, dark } = e.detail;
+      const { dark } = e.detail;
       section.style.setProperty('--dark', dark.toFixed(3));
-      clock.textContent = `${String(Math.floor(hour)).padStart(2, '0')}:${String(Math.floor((hour % 1) * 60)).padStart(2, '0')}`;
-      phase.textContent = phaseOf(hour);
     });
     toggle.addEventListener('change', (e) => localStorage.setItem(key, e.detail.night ? 'night' : 'day'));
     const saved = localStorage.getItem(key);
