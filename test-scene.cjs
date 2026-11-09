@@ -43,6 +43,17 @@ world.tick(1 / 30, 22, { calm: true });
 assert.equal(world.t, frozenTime, 'reduced motion stops the scene animation');
 assert.equal(world.levels[world.venueG], 1);
 
+// One shared cycle: the cyclist crosses first and the red tram follows, so they never meet on the granite band.
+const tramRed = () => {
+  let count = 0;
+  for (let i = 172 * 400 * 4; i < 184 * 400 * 4; i += 4) if (world.rgba[i] > 150 && world.rgba[i + 1] < 90 && world.rgba[i + 2] < 90) count++;
+  return count;
+};
+while (world.t % 54 < 20) world.tick(1 / 30, 12);
+assert.equal(tramRed(), 0, 'the track is clear while the cyclist crosses');
+while (world.t % 54 < 44) world.tick(1 / 30, 12);
+assert.ok(tramRed() > 300, 'the red tram passes on its track');
+
 // Optional raw frames let the same check produce a visual preview without browser dependencies.
 if (process.argv[2]) {
   for (const hour of [12, 18, 22]) {
@@ -50,4 +61,4 @@ if (process.argv[2]) {
     fs.writeFileSync(path.join(process.argv[2], `zabrze-${hour}.rgba`), world.rgba);
   }
 }
-console.log('Zabrze: day, dusk, night, dawn, venue lighting and reduced motion passed.');
+console.log('Zabrze: day, dusk, night, dawn, venue lighting, tram cycle and reduced motion passed.');

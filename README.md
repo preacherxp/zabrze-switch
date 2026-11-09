@@ -6,11 +6,13 @@ Contemporary Zabrze in a pixel-art day/night switch: the restored Carboneum wate
 
 The seven-second, 800 × 500 H.264 recording includes the entire animated switch, frame and moving glass lens.
 
-The scene is a compressed panorama of locations across the city. It portrays present-day tourism, culture, football and everyday public space. The heritage headframe stays still; visitors, a cyclist and the modern lift bring the scene to life.
+The scene is a compressed panorama of locations across the city. It portrays present-day tourism, culture, football and everyday public space. The heritage headframe stays still; visitors, a cyclist, the modern lift and a red-and-cream tram on its ballasted track bring the scene to life.
 
 ## Research
 
 [The source-cited research note](RESEARCH.md) records official venue and city references, inspected photographs, current visitor roles, addresses, architectural geometry and the limits of the available images. No stadium capacity or future completed-stand configuration is asserted. Night lighting schedules are artistic.
+
+The tram, its track and the street trees follow the city's photographs of [6 August 2026](https://miastozabrze.pl/2026/08/06/zabrze-z-nowymi-tramwajami/) and [19 August 2026](https://miastozabrze.pl/2026/08/19/wiekszy-komfort-mieszkancow-zabrza-tramwaje-slaskie-modernizuja-przejazdy/) and a [Tramwaje Śląskie press photograph](https://www.nakolei.pl/tramwaje-pesa-kursuja-w-zabrzu/). The tram is shortened and carries no route or fleet number; the yellow livery announced for late 2026 is not shown.
 
 ## Run and validate
 
