@@ -44,6 +44,7 @@
     neon('OFFICE','#b9d7df','#93c9df',.12);
     neon('FLOOD','#eac68c','#e6ae70',.18);
     neon('GOLD_SIGN','#f5d998','#e3bd68',.2);
+    neon('LAMP_POOL','#565a52','#e8c88a',.04);
   };
   const grade = [
     ([r, g, b]) => [r, g, b],
@@ -131,53 +132,53 @@
   };
 
   const drawCarnall = (w) => {
-    w.rect(41, 87, 72, 31, M.BRICK);
-    w.rect(39, 84, 76, 3, M.ROOF);
-    for(let y=89;y<117;y+=3)for(let x=42;x<112;x++)if((x+y)%7)w.px(x,y,M.BRICK_D);
-    for(const x of [47,60,73,86,99]){
+    w.rect(15, 87, 72, 31, M.BRICK);
+    w.rect(13, 84, 76, 3, M.ROOF);
+    for(let y=89;y<117;y+=3)for(let x=16;x<86;x++)if((x+y)%7)w.px(x,y,M.BRICK_D);
+    for(const x of [21,34,47,60,73]){
       w.rect(x,91,7,8,M.WINDOW);w.lightRect(x+1,92,5,6,N.WARM,w.venueG);
     }
-    w.hsign(44,101,64,10,'CARNALL',{font:5,n:N.LED_SOFT,g:w.venueG,board:M.ROOF,off:M.TRIM});
-    w.rect(70,112,13,6,M.WINDOW);w.lightRect(71,112,11,6,N.WARM,w.venueG);
+    w.hsign(18,101,64,10,'CARNALL',{font:5,n:N.LED_SOFT,g:w.venueG,board:M.ROOF,off:M.TRIM});
+    w.rect(44,112,13,6,M.WINDOW);w.lightRect(45,112,11,6,N.WARM,w.venueG);
     // A preserved visitor headframe, not a smoking working colliery.
-    for(const [ax,bx] of [[55,48],[79,93]])line(ax,47,bx,87,(x,y)=>{w.px(x,y,M.STEEL);w.px(x+1,y,M.STEEL_D);});
+    for(const [ax,bx] of [[29,22],[53,67]])line(ax,47,bx,87,(x,y)=>{w.px(x,y,M.STEEL);w.px(x+1,y,M.STEEL_D);});
     for(let y=47;y<87;y+=10){
-      const left=55-Math.round((y-47)*.17),right=80+Math.round((y-47)*.32);
+      const left=29-Math.round((y-47)*.17),right=54+Math.round((y-47)*.32);
       line(left,y,right,y+10,(x,py)=>w.px(x,py,M.STEEL_D));
       line(right,y,left,y+10,(x,py)=>w.px(x,py,M.STEEL_D));
       w.rect(left,y,right-left,1,M.STEEL);
     }
-    w.rect(49,47,38,3,M.STEEL);w.rect(49,44,38,1,M.STEEL_D);
-    for(let x=49;x<88;x+=5)w.rect(x,43,1,4,M.STEEL_D);
-    const cx=66,cy=35;
+    w.rect(23,47,38,3,M.STEEL);w.rect(23,44,38,1,M.STEEL_D);
+    for(let x=23;x<62;x+=5)w.rect(x,43,1,4,M.STEEL_D);
+    const cx=40,cy=35;
     for(let a=0;a<Math.PI*2;a+=.08){
       w.px(cx+Math.round(Math.cos(a)*11),cy+Math.round(Math.sin(a)*11),M.WHEEL);
       w.px(cx+Math.round(Math.cos(a)*9),cy+Math.round(Math.sin(a)*9),M.WHEEL_D);
     }
     for(let a=0;a<Math.PI*2;a+=Math.PI/4)line(cx,cy,cx+Math.round(Math.cos(a)*10),cy+Math.round(Math.sin(a)*10),(x,y)=>w.px(x,y,M.WHEEL_D));
-    line(cx,cy,57,47,(x,y)=>w.px(x,y,M.STEEL_D));line(cx,cy,76,47,(x,y)=>w.px(x,y,M.STEEL_D));
+    line(cx,cy,31,47,(x,y)=>w.px(x,y,M.STEEL_D));line(cx,cy,50,47,(x,y)=>w.px(x,y,M.STEEL_D));
   };
   const drawCarboneum = (w) => {
-    const cx=159;
+    const cx=133;
     // The glazed modern lift annex stands separately beside the restored brick tower.
-    w.rect(194,48,17,70,M.LIFT_GLASS);w.rect(194,47,17,2,M.STEEL);
-    for(let y=51;y<117;y+=7)w.rect(194,y,17,1,M.STEEL_D);
-    for(const x of [195,202,209])w.rect(x,49,1,68,M.STEEL_D);
-    w.lightRect(196,110,12,6,N.OFFICE,w.venueG);
+    w.rect(168,48,17,70,M.LIFT_GLASS);w.rect(168,47,17,2,M.STEEL);
+    for(let y=51;y<117;y+=7)w.rect(168,y,17,1,M.STEEL_D);
+    for(const x of [169,176,183])w.rect(x,49,1,68,M.STEEL_D);
+    w.lightRect(170,110,12,6,N.OFFICE,w.venueG);
     // Open supports, central core and the metal balcony ring are essential to this silhouette.
-    w.rect(154,60,11,34,M.BRICK_D);
-    for(const x of [132,144,175,185])w.rect(x,60,5,36,M.BRICK);
-    w.rect(134,78,54,1,M.STEEL);w.rect(133,83,56,1,M.STEEL_D);
-    for(let x=135;x<188;x+=4)w.rect(x,78,1,6,M.STEEL_D);
-    for(const x of [135,178])w.lightRect(x,65,2,11,N.FLOOD,w.venueG);
+    w.rect(128,60,11,34,M.BRICK_D);
+    for(const x of [106,118,149,159])w.rect(x,60,5,36,M.BRICK);
+    w.rect(108,78,54,1,M.STEEL);w.rect(107,83,56,1,M.STEEL_D);
+    for(let x=109;x<162;x+=4)w.rect(x,78,1,6,M.STEEL_D);
+    for(const x of [109,152])w.lightRect(x,65,2,11,N.FLOOD,w.venueG);
     // Polygonal brick base with daylight windows and a visitor entrance.
-    w.rect(132,94,57,24,M.BRICK);w.rect(183,94,6,24,M.BRICK_D);
-    w.rect(130,92,61,3,M.ROOF);
-    for(const x of [136,147,159,171,182]){
+    w.rect(106,94,57,24,M.BRICK);w.rect(157,94,6,24,M.BRICK_D);
+    w.rect(104,92,61,3,M.ROOF);
+    for(const x of [110,121,133,145,156]){
       w.rect(x,96,4,5,M.WINDOW);w.lightRect(x,97,4,3,N.WARM,w.venueG);
       w.rect(x,112,4,6,M.WINDOW);w.lightRect(x,113,4,5,N.WARM,w.venueG);
     }
-    w.hsign(127,102,67,10,'CARBONEUM',{font:5,n:N.LED_SOFT,g:w.venueG,board:M.ROOF,off:M.TRIM});
+    w.hsign(105,102,59,10,'CARBONEUM',{font:5,n:N.LED_SOFT,g:w.venueG,board:M.ROOF,off:M.TRIM});
     // Broad dark tank enclosure, sloping shoulders and the little domed lantern.
     for(let y=35;y<62;y++){
       const half=23+Math.floor((y-35)*.4);
@@ -188,48 +189,53 @@
       w.rect(cx-half,y,half*2+1,1,M.ROOF);
       w.px(cx-half,y,M.ROOF_L);
     }
-    w.rect(151,18,17,6,M.ROOF_D);w.rect(154,15,11,4,M.ROOF);
-    w.rect(157,13,5,3,M.ROOF_D);
-    for(const x of [155,159,163])w.tube(x,20,M.WINDOW,N.WARM_DIM,w.venueG);
-    w.rect(151,39,9,7,M.TRIM);w.rect(152,40,7,5,M.WINDOW_H);w.rect(155,40,1,5,M.STEEL_D);
-    w.rect(125,62,69,2,M.ROOF_L);
+    w.rect(cx-8,18,17,6,M.ROOF_D);w.rect(cx-5,15,11,4,M.ROOF);
+    w.rect(cx-2,13,5,3,M.ROOF_D);
+    for(const x of [cx-4,cx,cx+4])w.tube(x,20,M.WINDOW,N.WARM_DIM,w.venueG);
+    w.rect(cx-8,39,9,7,M.TRIM);w.rect(cx-7,40,7,5,M.WINDOW_H);w.rect(cx-4,40,1,5,M.STEEL_D);
+    w.rect(cx-34,62,68,2,M.ROOF_L);
   };
   const drawDmit = (w) => {
-    w.rect(-30,94,72,24,M.PALE);
-    w.rect(-9,82,43,12,M.PALE_D);
-    for(let i=0;i<6;i++)w.rect(-10+i,83+i,1,11-i,M.PALE);
-    for(let x=0;x<32;x+=6)w.rect(x,85,3,7,M.WINDOW);
-    w.hsign(5,94,34,10,'DMIT',{font:5,n:N.GOLD_SIGN,g:w.venueG,board:M.PALE,off:M.GOLD});
-    for(let x=-25;x<37;x+=8){w.rect(x,107,6,10,M.WINDOW);w.lightRect(x+1,108,4,8,N.WARM,w.venueG);}
-    w.rect(-30,118,74,1,M.STONE_D);
+    w.rect(189,94,47,24,M.PALE);
+    w.rect(197,82,31,12,M.PALE_D);
+    for(let i=0;i<6;i++)w.rect(196+i,83+i,1,11-i,M.PALE);
+    for(let x=200;x<226;x+=6)w.rect(x,85,3,7,M.WINDOW);
+    w.hsign(198,94,29,10,'DMIT',{font:5,n:N.GOLD_SIGN,g:w.venueG,board:M.PALE,off:M.GOLD});
+    for(let x=191;x<230;x+=8){w.rect(x,107,6,10,M.WINDOW);w.lightRect(x+1,108,4,8,N.WARM,w.venueG);}
+    w.rect(187,118,51,1,M.STONE_D);
   };
   const drawArena = (w) => {
     // The verified ribbed exterior is shown without asserting a future stand configuration.
-    for(let dx=0;dx<139;dx++){
-      const edge=Math.min(dx,138-dx),inset=Math.max(0,7-Math.floor(edge/3));
+    for(let dx=0;dx<69;dx++){
+      const edge=Math.min(dx,68-dx),inset=Math.max(0,7-Math.floor(edge/3));
       const top=83+inset,bottom=115-inset;
-      w.rect(221+dx,top,1,bottom-top,M.ARENA_GLASS);
-      w.px(221+dx,top,M.TRIM);w.px(221+dx,bottom,M.STEEL);
-      if(dx%7<2)w.lightRect(221+dx,top+4,1,Math.max(1,bottom-top-9),N.WARM,w.arenaG);
+      w.rect(242+dx,top,1,bottom-top,M.ARENA_GLASS);
+      w.px(242+dx,top,M.TRIM);w.px(242+dx,bottom,M.STEEL);
+      if(dx%7<2)w.lightRect(242+dx,top+4,1,Math.max(1,bottom-top-9),N.WARM,w.arenaG);
     }
-    for(let x=226;x<357;x+=8){
+    for(let x=247;x<304;x+=8){
       w.rect(x,87,1,25,M.STEEL);
-      line(x,86,Math.min(x+8,358),112,(px,y)=>w.px(px,y,M.STEEL_D));
-      line(x,112,Math.min(x+8,358),86,(px,y)=>w.px(px,y,M.STEEL_D));
+      line(x,86,Math.min(x+8,305),112,(px,y)=>w.px(px,y,M.STEEL_D));
+      line(x,112,Math.min(x+8,305),86,(px,y)=>w.px(px,y,M.STEEL_D));
     }
-    w.rect(220,115,140,3,M.PALE_D);
-    w.hsign(260,98,47,10,'ARENA',{font:5,n:N.LED_SOFT,g:w.arenaG,board:M.STEEL_D,off:M.TRIM});
-    w.rect(248,118,79,2,M.STONE);w.rect(244,120,87,1,M.STONE_D);
+    w.rect(241,115,71,3,M.PALE_D);
+    w.hsign(257,98,39,10,'ARENA',{font:5,n:N.LED_SOFT,g:w.arenaG,board:M.STEEL_D,off:M.TRIM});
+    w.rect(250,118,53,2,M.STONE);w.rect(246,120,61,1,M.STONE_D);
   };
   const build=(w,ctx)=>{
     M=ctx.M;N=ctx.N;
     for(let key=NOON;key<=DAWN;key++)smoothSky(w,key,ctx);
     w.noSignal=true;w.walkTop=118;w.roadTop=140;
-    w.venueG=w.addGroup(17.8,30,'room');w.arenaG=w.addGroup(18.2,25,'room');
+    w.venueG=w.addGroup(17.8,30,'room');w.arenaG=w.addGroup(18.2,25,'room');w.lampG=w.addGroup(17.6,30.4,'neon',{soft:true});
     w.depth=0;for(let x=-40;x<360;x+=19)w.rect(x,96+Math.abs(x%8),18,22,M.FAR1);
     w.depth=2;drawSquare(w);drawDmit(w);drawCarnall(w);drawCarboneum(w);drawArena(w);
-    for(const x of [-15,117,217,349]){w.rect(x,109,1,16,M.TIMBER_D);tree(w,x,104,6,9,rng(x+400));w.rect(x-5,123,11,3,M.PLANTER);}
-    for(const x of [111,215,328]){w.rect(x,102,1,25,M.STEEL);w.rect(x-3,101,7,1,M.STEEL);w.lightRect(x-2,102,5,1,N.LED_SOFT,w.venueG);}
+    for(const x of [-15,186,316,349]){w.rect(x,109,1,16,M.TIMBER_D);tree(w,x,104,6,9,rng(x+400));w.rect(x-5,123,11,3,M.PLANTER);}
+    // Lantern lamps in the gaps between buildings, each with a pool of light on the paving.
+    for(const x of [92,239]){
+      w.rect(x,101,1,25,M.STEEL);w.rect(x-1,125,3,1,M.STEEL_D);
+      w.rect(x-2,97,5,1,M.STEEL_D);w.rect(x-1,98,3,3,M.TRIM);w.lightRect(x-1,98,3,3,N.LED_SOFT,w.lampG);
+      for(let dy=0;dy<3;dy++)for(let dx=-6+dy*2;dx<=6-dy*2;dx++)if(Math.abs(dx)<4-dy||(dx+dy)%2===0)w.light(x+dx,126+dy,N.LAMP_POOL,w.lampG);
+    }
     w.strata=[{x:-20,y:7,w:65,v:.4},{x:215,y:19,w:70,v:.5}];
     w.cat.x=202;w.cat.y=129;
     for(const [x,y,dir,speed,style] of [[24,125,1,5,'coat'],[88,128,-1,4,'shirt'],[143,124,1,5,'coat'],[235,127,-1,5,'suit'],[298,125,1,4,'shirt']])w.peds.push({x,y,dir,speed,style,phase:x%3});
@@ -239,10 +245,11 @@
     drawSky(w,dt,hour);
     // Visitors ride the modern glass lift; the heritage headframe remains still.
     const y=63+Math.round((Math.sin(w.t*.3)+1)*22);
-    w.rect(196,y,12,7,M.LIFT_CAB);w.rect(197,y+1,10,5,M.WINDOW_H);
-    w.lightRect(198,y+2,8,3,N.OFFICE,w.venueG);
+    w.rect(170,y,12,7,M.LIFT_CAB);w.rect(171,y+1,10,5,M.WINDOW_H);
+    w.lightRect(172,y+2,8,3,N.OFFICE,w.venueG);
     w.drawPeople(dt,hour);w.drawCat(dt,hour);
-    const bx=Math.round((w.t*12+20)%420)-50,by=144;
+    // The cycle lane runs along the granite band, where the curved ends still show the whole bike.
+    const bx=Math.round((w.t*12+20)%420)-50,by=137;
     for(const cx of [bx,bx+12])for(let a=0;a<Math.PI*2;a+=.3)w.px(cx+Math.round(Math.cos(a)*3),by+Math.round(Math.sin(a)*3),M.STEEL_D);
     for(const [x0,y0,x1,y1] of [[0,0,5,-5],[5,-5,8,0],[8,0,0,0],[5,-5,10,-5],[10,-5,12,0]])line(bx+x0,by+y0,bx+x1,by+y1,(x,py)=>w.px(x,py,M.BRICK));
     w.rect(bx+5,by-13,3,3,M.SKIN);w.rect(bx+4,by-10,4,5,M.TREE_D);
