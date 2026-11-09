@@ -12,6 +12,11 @@ experience when changing a scene or exporting a preview.
   a riverfront and Lisbon hills, trams and water. Copy **techniques, not content**.
   Each city needs its own sky ramps and grade, its own ground treatment and its own
   actors; do not paste another scene's palette, paving, cyclist or crowd.
+- Start a new scene from the template in this guide, never from a copy of another
+  city's file. Several earlier scenes were started that way and still share one
+  sun path, one cloud, one tree and one cyclist, which is why they look alike. A
+  scene's sun and moon path, clouds, trees, paving and at least two actors beyond
+  the engine's pedestrians and cat must be its own.
 - Every city is an independent repository with its own engine copy, scene, demo,
   README and `.nojekyll`. The central repository (`city-switches`) is a Git
   repository that pins each city as a submodule in `repos/<city>-switch/`; its map
@@ -24,6 +29,33 @@ experience when changing a scene or exporting a preview.
 - Keep this buildless: ordinary JavaScript, a custom element, and static HTML.
   Do not introduce a framework or runtime dependency to draw another city.
 
+## Gather references before drawing
+
+A scene drawn from memory comes out generic. Nothing is planned or painted until
+its references exist.
+
+- Ask the user once, at the start, for reference material: photographs, links, a
+  research file, the viewpoint they have in mind, and the landmarks and street life
+  that matter to them. Carry on with whatever does not depend on the answer.
+- Where they give none, or it leaves gaps, or nobody is there to answer, do the
+  research yourself before planning the layout. Do not draw a landmark, a vehicle
+  or a sign from memory.
+- For every landmark, venue and vehicle, open actual photographs, from official
+  city, venue or transport sources first. Reading a description is not enough.
+  Note the silhouette, proportions, materials, colours, lettering and how it is
+  lit at night, and the date of each photograph where it is known.
+- Research the ordinary as well: paving, kerbs and tracks, lamps and street
+  furniture, the current tram or bus model and its livery, typical shopfronts,
+  trees, weather and season. These are what make the ground and the actors belong
+  to this city and no other.
+- Distinguish an existing building from a proposed renovation or a similarly named
+  venue, and verify any named business and address.
+- Write the result to `RESEARCH.md` in the city's repository before building: a
+  table of landmarks with their verified present use and pixel-art features, the
+  images that were actually opened with their links, a suggested layout in logical
+  pixels, the life and vehicles to show, and what could not be verified. The Zabrze
+  repository's `RESEARCH.md` is the model. Link the sources from the README too.
+
 ## Establish a city-specific composition
 
 1. Identify one civic or skyline landmark a resident recognizes in silhouette,
@@ -32,9 +64,8 @@ experience when changing a scene or exporting a preview.
    atmosphere. A business or hotel alone does not establish a city. Prefer
    contemporary streets, transport, shops, lighting, and public spaces unless the
    user asks for another period.
-2. Verify landmark appearance and any named business/address against official
-   city, venue, or transport sources. Keep source links in the README. Distinguish
-   an existing building from a proposed renovation or a similarly named venue.
+2. Draw every landmark, vehicle and sign from the references gathered above, not
+   from memory. If one is missing from `RESEARCH.md`, research it first.
 3. Plan the scene in logical pixels before adding detail: skyline, buildings,
    ground, landmark bounds, signs, moving actors, and their paths. Reserve quiet
    sky around towers and clear space around lettering.
@@ -46,7 +77,22 @@ experience when changing a scene or exporting a preview.
    with the reason for changing it.
 7. Reach the foreground density of the original three: several actor types, at
    least one vehicle or other signature moving element, and at least one lit
-   storefront or sign that changes at night.
+   storefront or sign that changes at night. `node tools/preview.cjs` in the
+   central repository prints how much of a scene moves and lights up. Warsaw,
+   Berlin and Lisbon move about 2,400–3,500 pixels a frame at noon, light
+   3,000–10,000 pixels at night and use about 80 or more materials. A scene at a
+   third of that is unfinished. The numbers are a comparison, not a score to chase:
+   a large blank tram moves many pixels and adds little.
+
+Look at the scene after every stage, not once at the end. From the central
+repository, `node tools/preview.cjs <city>` runs the real scene without a browser
+and writes PNGs to `capture/preview/`: the flat scene at noon, golden hour, dusk,
+night and dawn, and an actor strip at noon and at night. Everything outside the
+switch window is dimmed, and edge ticks mark every 10 logical pixels (long ticks
+every 50, from `x = 0` and `y = 0`). Open the images after blocking in the
+silhouettes, after each landmark, after the signs and after each actor, and fix
+what looks wrong before adding more. For a city not yet pinned centrally, link or
+clone its repository to `repos/<city>-switch/` first.
 
 The visible reference scene is about **320 × 150 logical pixels**. The actual
 buffer is **400 × 190**, with **40 pixels of horizontal and top padding**. Normal
@@ -132,6 +178,62 @@ Set `label` to `'<City> day and night'`; never leave the engine default.
   calibration, or layout engine. If a shared engine change is necessary, inspect
   every caller and validate every city before copying it into standalone repos.
 
+### What the world already provides
+
+The engine header lists the scene options. These are the parts of the world `w`
+that it does not list. Use them before writing your own, and check the engine
+source for anything not covered here.
+
+- **Scene options not in the header:** `street(M)` returns the extra materials that
+  count as ground for wet reflections; `checks: { signs: { TEXT: 'why' } }` accepts
+  a sign flagged by the composition check.
+- **Context:** `ctx` carries `mat`, `neon`, `M`, `N`, the keys `NOON GOLD DUSK NIGHT
+  DAWN`, `rgb(hex)`, `pack([r, g, b])`, `rng`, `clamp`, `mix`, `smooth`, `BW`, `BH`,
+  `PAD_X` and `PAD_Y`. `mat(name, hex, { [NIGHT]: hex })` overrides the grade for
+  one key.
+- **Built-in materials and lights:** the engine registers about 100 materials
+  (`ROAD`, `WALK`, `CURB`, `STEEL`, `GLASS`, `SKIN`, `HAIR`, `SUIT`, `COAT`, `SHIRT`,
+  `CAR_*`, `BOARD_*`, `CLOUD`, …) and 40 lights (`WARM`, `WARM_DIM`, `STORE`,
+  `FLUO`, `LED`, `HEAD`, `TAIL`, `BEACON`, the sign colours, …) before the scene's
+  own. Read the two lists at the top of `define` rather than registering a
+  duplicate.
+- **Light groups:** group `1` is always on and `2` is on whenever it is dark.
+  `w.addGroup(on, off, kind, opts)` adds one; `kind` is `'neon'` (flickers on) or
+  `'room'` (fades), and `{ soft: true }` fades a neon. Ready-made: `w.neonGroup`,
+  `w.softGroup`, `w.store` (all day), five `w.farWin` and 28 staggered
+  `w.winGroups` for windows that come on one by one.
+- **Depth:** `build()` paints at `w.depth` (0 by default). `w.pxSky` paints only
+  where there is no static scenery, `w.pxBehind` only where depth is at most 1,
+  and `w.pxBack`/`w.rectBack` only where it is below 3. Paint near buildings at
+  depth 2 and foreground trees at 3 so that sky objects and far traffic pass
+  behind them.
+- **Paint:** `px`, `rect`, `sprite(rows, map, x, y, flip)`, `light`, `lightRect`,
+  `tube` (a lit pixel with an off colour), `pxLight` (a light added while
+  drawing), `glyph`, `hsign`, `vsign`, `wire(x0, y0, x1, y1, sag)` and `wireY`.
+- **Sky:** `sun(x, y, R, low)`, `moon(x, y)`, `drawStars()`,
+  `drawClouds([{ x, y, w, v }], dt)` and `drawBeacons()` for the points in
+  `w.beacons`. Their paths and shapes are the scene's to choose.
+- **Pedestrians:** push `{ x, y, dir, speed, style, phase, nightOnly }` onto
+  `w.peds` in `build()` and call `w.drawPeople(dt, hour)` in `draw()`. `y` is the
+  feet. `w.personStyles[name] = [top, legs, hair]` adds a style. They carry
+  umbrellas in rain and thin out before dawn.
+- **Cars:** push `{ x, lane, dir, kind, len, speed, color }` onto `w.cars`; `lane`
+  indexes `w.lanes` and `kind` is `'sedan'`, `'taxi'` or `'kei'`.
+  `w.drawTraffic(dt)` moves, queues and paints them and stops them at
+  `w.stopLines` unless `w.noSignal` is set. `w.walkTop` and `w.roadTop` place the
+  pavement and the road.
+- **Cat:** `w.cat = { x, y, puff }` with `w.drawCat(dt, hour)`; `startle` usually
+  sets `puff`.
+- **Props:** `vending(x, y, body, seed)` and `tallTower(x, top, w, m)`, a far tower
+  with an aviation light.
+- **After composition, in `post()`:** `reflect()` for wet ground,
+  `mirrorWater(line, bottom, mats, opts)` for water, `drawRain(dt)`,
+  `drawSnow(dt)` and `drawBeams()` for headlights.
+
+The engine's pedestrians, cars and cat are a base layer shared by every city. The
+actors that make a city recognisable are written in the scene: its tram, its
+boat, its queue, its market.
+
 ## Preserve the interaction and demo
 
 - Keep the real shadow-DOM button with `role="switch"`, `aria-checked`, its
@@ -183,9 +285,10 @@ Use a short, repeatable check and keep evidence of what actually ran.
 - Watch multiple animation cycles and a fast drag. Look for disappearing actors,
   abrupt wraps, broken reflections, lighting that never turns off, incorrect
   depth, flicker, unreadable signs, and unintended overlaps across actor paths.
-- Make an actor strip: advance the real scene with `world.tick` for 60 seconds at
-  noon and at night, crop the ground band every 6 seconds, and stack the crops in
-  one image. Single screenshots miss collisions; the strip shows them.
+- Read the actor strips from `node tools/preview.cjs <city>`: the ground band
+  every 6 seconds for 60 seconds, at noon and at night. Single screenshots miss
+  collisions; the strip shows them. Its flat stills have no glass, frame or bloom
+  and do not replace the browser captures above.
 - Exercise tap, drag both ways, arrow keys, Home/End, and Space; verify the
   accessible switch state, clock, phase, page colour, and restored preference.
   Check reduced motion and resizing while the switch is active.
