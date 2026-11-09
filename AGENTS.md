@@ -169,7 +169,10 @@ Use a short, repeatable check and keep evidence of what actually ran.
 - Aim for a 6–8 second loop with brief day/night holds and both travel directions.
   Keep the entire frame inside the export and preserve enough size for landmarks
   to read. Avoid excessive empty padding or unrelated captions.
-- Inspect day, intermediate, night, and return frames, and verify GIF duration,
+- For frame-by-frame capture, stop the browser animation scheduler and advance
+  the real scene by exactly `1 / fps` per captured frame. Assert scene time so
+  slow screenshot rendering cannot speed up the exported city animation.
+- Inspect day, intermediate, night, and return frames, and verify export duration,
   dimensions, looping, and file size. Verify the lens moves and the city animates.
 - If local Chromium cannot run, use an available supported browser or a bounded
   GitHub Actions capture job. Do not substitute a mocked lens and call it a
