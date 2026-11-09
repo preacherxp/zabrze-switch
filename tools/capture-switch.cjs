@@ -13,6 +13,7 @@ assert.ok(/^[a-z][a-z0-9-]*$/.test(city) && fs.existsSync(`${root}/${city}.js`),
 const tag = `${city}-switch`;
 const out = `capture/${city}`;
 // Waits poll on a timer: with software WebGL, animation-frame polling can starve and time out.
+// Waits for the lens to stop, not just to touch an end: the spring can pass 0 before it settles.
 fs.mkdirSync(`${out}/frames`, { recursive: true });
 
 (async () => {
@@ -28,7 +29,7 @@ fs.mkdirSync(`${out}/frames`, { recursive: true });
     await control.click();
     await page.waitForFunction((tag) => document.querySelector(tag).checked, tag, { polling: 100 });
     await control.press('Home');
-    await page.waitForFunction((tag) => document.querySelector(tag).position < .001, tag, { polling: 100 });
+    await page.waitForFunction((tag) => document.querySelector(tag).position < .001 && !document.querySelector(tag).moving, tag, { polling: 100 });
     await control.press('ArrowRight');
     await page.waitForFunction((tag) => document.querySelector(tag).position > .01, tag, { polling: 100 });
     await control.press('End');
@@ -44,7 +45,7 @@ fs.mkdirSync(`${out}/frames`, { recursive: true });
     await page.waitForFunction((tag) => document.querySelector(tag).position > .6, tag, { polling: 100 });
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await control.press('Home');
-    await page.waitForFunction((tag) => document.querySelector(tag).position === 0, tag, { polling: 100 });
+    await page.waitForFunction((tag) => document.querySelector(tag).position === 0 && !document.querySelector(tag).moving, tag, { polling: 100 });
     await control.press('End');
     await page.waitForFunction((tag) => document.querySelector(tag).checked, tag, { polling: 100 });
     assert.equal(await control.getAttribute('aria-checked'), 'true');
