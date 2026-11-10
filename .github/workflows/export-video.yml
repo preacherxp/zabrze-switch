@@ -14,12 +14,14 @@ concurrency:
 jobs:
   export:
     runs-on: ubuntu-latest
+    # Chromium and its system libraries come ready in this image, so nothing is installed with apt.
+    container: mcr.microsoft.com/playwright:v1.56.1-noble
     timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: '22'
       - uses: actions/checkout@v6
         with:
           repository: preacherxp/city-switches
@@ -32,18 +34,15 @@ jobs:
           ln -s "$PWD" .central/repos/zabrze-switch
           node .central/tools/check-composition.cjs zabrze
           rm -rf .central
-      - name: Install browser and encoder
-        run: |
-          npm install --prefix "$RUNNER_TEMP/recording" playwright@1.56.1
-          "$RUNNER_TEMP/recording/node_modules/.bin/playwright" install --with-deps chromium
-          sudo apt-get update -qq
-          sudo apt-get install -y ffmpeg
+      - name: Install the recorder, encoder and a static server
+        run: npm install --prefix "$RUNNER_TEMP/recording" playwright@1.56.1 ffmpeg-static@5 ffprobe-static@3 http-server@14
       - name: Review and capture the full switch
         run: |
-          python3 -m http.server 8080 > "$RUNNER_TEMP/http.log" 2>&1 &
-          CAPTURE_ROOT=. CAPTURE_PATH=/ NODE_PATH="$RUNNER_TEMP/recording/node_modules" node tools/capture-switch.cjs zabrze
-          ffmpeg -y -framerate 60 -i capture/zabrze/frames/%03d.png -c:v libx264 -crf 18 -pix_fmt yuv420p -movflags +faststart zabrze-day-night-60fps.mp4
-          ffprobe -v error -select_streams v -show_entries stream=codec_name,width,height,r_frame_rate,nb_frames -of csv=p=0 zabrze-day-night-60fps.mp4
+          tools="$RUNNER_TEMP/recording/node_modules"
+          "$tools/.bin/http-server" . -p 8080 -c-1 > "$RUNNER_TEMP/http.log" 2>&1 &
+          CAPTURE_ROOT=. CAPTURE_PATH=/ NODE_PATH="$tools" node tools/capture-switch.cjs zabrze
+          "$tools/ffmpeg-static/ffmpeg" -y -framerate 60 -i capture/zabrze/frames/%03d.png -c:v libx264 -crf 18 -pix_fmt yuv420p -movflags +faststart zabrze-day-night-60fps.mp4
+          "$tools/ffprobe-static/bin/linux/x64/ffprobe" -v error -select_streams v -show_entries stream=codec_name,width,height,r_frame_rate,nb_frames -of csv=p=0 zabrze-day-night-60fps.mp4
       - uses: actions/upload-artifact@v5
         if: always()
         with:
@@ -56,6 +55,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git add zabrze-day-night-60fps.mp4
           if git diff --cached --quiet; then echo "Video unchanged"; exit 0; fi
           git config user.name 'github-actions[bot]'
@@ -63,4 +63,4 @@ jobs:
           git commit -m "Export the day/night video for ${GITHUB_SHA::7}"
           git pull --rebase origin main
           git push origin HEAD:main
-          gh api -X POST "repos/$GITHUB_REPOSITORY/pages/builds" || echo "Pages build request failed; the push may already have triggered one"
+          curl -fsS -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$GITHUB_REPOSITORY/pages/builds" || echo "Pages build request failed; the push may already have triggered one"
