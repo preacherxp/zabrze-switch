@@ -1,0 +1,41 @@
+# Takes the shared engine, guide and capture tool from the central repository, so that they are
+# edited in one place and reach every city by themselves. An engine or tool change starts the
+# export, which tests the scene and the real switch with it.
+name: Sync shared files
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: sync-shared
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6
+        with:
+          repository: preacherxp/city-switches
+          path: .central
+      - name: Copy and commit what changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp .central/city-switch.js city-switch.js
+          cp .central/tools/capture-switch.cjs tools/capture-switch.cjs
+          # The guide without its last section, which is about the central map.
+          node -e "const fs = require('fs'); fs.writeFileSync('AGENTS.md', fs.readFileSync('.central/AGENTS.md', 'utf8').split('\n\n## Central map')[0] + '\n')"
+          from=$(git -C .central rev-parse --short HEAD)
+          git add city-switch.js tools/capture-switch.cjs AGENTS.md
+          if git diff --cached --quiet; then echo "Shared files are current"; exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m "Take the shared files from city-switches@$from"
+          git pull --rebase origin main
+          git push
+          # A push made by a workflow does not start other workflows, so ask for the export directly.
+          if ! git diff --quiet HEAD~1 -- city-switch.js tools/capture-switch.cjs; then gh workflow run export-video.yml; fi

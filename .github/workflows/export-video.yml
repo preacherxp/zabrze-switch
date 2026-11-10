@@ -1,4 +1,4 @@
-# Records the full switch whenever the scene changes and commits the MP4 the demo links to.
+# Tests the scene, then records the full switch whenever it changes and commits the MP4 the demo links to.
 name: Export video
 on:
   push:
@@ -20,6 +20,18 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
+      - uses: actions/checkout@v6
+        with:
+          repository: preacherxp/city-switches
+          path: .central
+      - name: Test the scene and its composition
+        run: |
+          if [ -f test-scene.cjs ]; then node test-scene.cjs; fi
+          # The composition check reads a city from the central layout, so stand this checkout in it.
+          mkdir -p .central/repos && rm -rf .central/repos/zabrze-switch
+          ln -s "$PWD" .central/repos/zabrze-switch
+          node .central/tools/check-composition.cjs zabrze
+          rm -rf .central
       - name: Install browser and encoder
         run: |
           npm install --prefix "$RUNNER_TEMP/recording" playwright@1.56.1
