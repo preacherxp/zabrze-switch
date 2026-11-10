@@ -22,8 +22,9 @@ experience when changing a scene or exporting a preview.
   repository that pins each city as a submodule in `repos/<city>-switch/`; its map
   and gallery load scripts directly from there. Edit a city only inside its own
   repository or submodule checkout. Copies outside a Git checkout are not sources.
-- Commit and publish a city change first, then commit its new submodule pointer
-  centrally. Never publish a gitlink to a commit absent remotely.
+- Publish a city change in its own repository; that is all it needs. The central
+  **Update cities** workflow pins a city once its export has passed, so do not
+  commit submodule pointers by hand.
 - Read local instructions, inspect Git status and remotes, and preserve existing
   user changes.
 - Keep this buildless: ordinary JavaScript, a custom element, and static HTML.
@@ -175,8 +176,12 @@ Set `label` to `'<City> day and night'`; never leave the engine default.
 - Use seeded `rng()` for stable scenery. Initialize actor arrays once and reuse
   them. Avoid unbounded collections and unnecessary allocations in hot loops.
 - Scene work should not require changes to the glass, spring physics, pointer
-  calibration, or layout engine. If a shared engine change is necessary, inspect
-  every caller and validate every city before copying it into standalone repos.
+  calibration, or layout engine.
+- The engine, this guide and `tools/capture-switch.cjs` are shared. Their source is
+  the central repository, and each city's **Sync shared files** workflow copies them
+  in within minutes. Never edit a city's copy: it is overwritten. For a shared
+  change, edit the central file, copy it into every local city checkout, inspect
+  every caller and validate every city, then publish the central repository only.
 
 ### What the world already provides
 
@@ -301,9 +306,11 @@ Use a short, repeatable check and keep evidence of what actually ran.
 ### Shareable animation
 
 - Each city repository has an **Export video** workflow. On every push to `main`
-  that changes the engine, scene or demo, it runs `tools/capture-switch.cjs`,
-  encodes `<city>-day-night-60fps.mp4` and commits it if it changed. Do not commit
-  hand-made exports over it; run the workflow manually to refresh a video.
+  that changes the engine, scene or demo, it runs the scene test, the composition
+  check and `tools/capture-switch.cjs`, encodes `<city>-day-night-60fps.mp4` and
+  commits it if it changed. The central repository takes a city only after this
+  run has passed. Do not commit hand-made exports over it; run the workflow
+  manually to refresh a video.
 - When asked for a switch GIF/video, capture the **actual browser-rendered full
   control**, including the frame, glass lens, its motion, and changing city light.
   A raw city-panorama animation is a different artifact.
@@ -329,6 +336,8 @@ Use a short, repeatable check and keep evidence of what actually ran.
   Preserve existing attribution. Do not invent a licence for inherited code.
 - When separate repositories are requested, each must contain all of its assets
   and this guide. Keep source copies consistent; no dependency on sibling repos.
+  Copy `.github/workflows/` from an existing city: `sync-shared.yml` as it is and
+  `export-video.yml` with the city's name replaced.
 - Publish only within the user's requested scope. For GitHub Pages, a buildless
   demo can serve `/` from `main` with `.nojekyll`; no custom build workflow is
   needed. Check existing repository names before creating or changing anything.
