@@ -4,7 +4,7 @@ Contemporary Zabrze in a pixel-art day/night switch: the restored Carboneum wate
 
 [Live demo](https://preacherxp.github.io/zabrze-switch/) · [Download 60 fps MP4](zabrze-day-night-60fps.mp4)
 
-The seven-second, 800 × 500 H.264 recording includes the entire animated switch, frame and moving glass lens.
+The seven-second, 1600 × 1000 H.264 recording includes the entire animated switch, frame and moving glass lens.
 
 The scene is a compressed panorama of locations across the city. It portrays present-day tourism, culture, football and everyday public space. The heritage headframe stays still; visitors, a cyclist, the modern lift and a red-and-cream tram on its ballasted track bring the scene to life.
 
