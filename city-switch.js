@@ -2368,8 +2368,6 @@ void main() {
 }
 /* Unlit segments behind the digits, like a pocket LCD */
 .clock::before { content: '88:88'; position: absolute; inset: 0; z-index: -1; color: #fff; opacity: .06; text-shadow: none; }
-.colon { animation: colon 1.2s steps(1) infinite; }
-@keyframes colon { 50% { opacity: .25; } }
 .place { font: var(--readout-place-font, inherit); font-size: var(--readout-place-size, 15px); text-transform: var(--readout-place-case, none); letter-spacing: var(--readout-place-spacing, normal); }
 b { display: block; font-weight: 600; text-shadow: 1px 1px 0 #03080c; }
 .phase { position: relative; display: block; color: #c6d1d5; white-space: nowrap; }
@@ -2377,7 +2375,6 @@ b { display: block; font-weight: 600; text-shadow: 1px 1px 0 #03080c; }
 .phase::after { content: 'Signs coming on'; display: block; height: 0; visibility: hidden; }
 /* A pixel lamp in the gap before the phase, lit in the colour of the hour */
 .phase::before { content: ''; position: absolute; left: -12px; top: 50%; width: 6px; height: 6px; margin-top: -3px; background: var(--led, #f3ecd8); box-shadow: 0 0 0 1px #03080c; }
-@media (prefers-reduced-motion: reduce) { .colon { animation: none; } }
 `;
   const phaseOf = (h) => (h >= 5 && h < 7 ? 'Dawn' : h >= 7 && h < 10 ? 'Morning' : h >= 10 && h < 16 ? 'Daytime' : h >= 16 && h < 18 ? 'Golden hour' : h >= 18 && h < 19.5 ? 'Signs coming on' : 'Night');
   class CityReadout extends HTMLElement {
@@ -2413,7 +2410,7 @@ b { display: block; font-weight: 600; text-shadow: 1px 1px 0 #03080c; }
       const hh = String(Math.floor(hour)).padStart(2, '0'), mm = String(Math.floor((hour % 1) * 60)).padStart(2, '0');
       if (this.clock.dataset.time !== hh + mm) {
         this.clock.dataset.time = hh + mm;
-        this.clock.innerHTML = `${hh}<span class="colon">:</span>${mm}`;
+        this.clock.textContent = `${hh}:${mm}`;
       }
       this.phase.textContent = phaseOf(hour);
       // Cream by day, amber by night, as rgb() so contrast checks can read it
