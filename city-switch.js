@@ -2372,7 +2372,9 @@ void main() {
 @keyframes colon { 50% { opacity: .25; } }
 .place { font: var(--readout-place-font, inherit); font-size: var(--readout-place-size, 15px); text-transform: var(--readout-place-case, none); letter-spacing: var(--readout-place-spacing, normal); }
 b { display: block; font-weight: 600; text-shadow: 1px 1px 0 #03080c; }
-.phase { position: relative; color: #c6d1d5; }
+.phase { position: relative; display: block; color: #c6d1d5; white-space: nowrap; }
+/* Room for the longest phase, so the readout keeps its size as the hours pass */
+.phase::after { content: 'Signs coming on'; display: block; height: 0; visibility: hidden; }
 /* A pixel lamp in the gap before the phase, lit in the colour of the hour */
 .phase::before { content: ''; position: absolute; left: -12px; top: 50%; width: 6px; height: 6px; margin-top: -3px; background: var(--led, #f3ecd8); box-shadow: 0 0 0 1px #03080c; }
 @media (prefers-reduced-motion: reduce) { .colon { animation: none; } }
