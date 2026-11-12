@@ -1,4 +1,4 @@
-# Tests the scene, then records the full switch whenever it changes and commits the MP4 the demo links to.
+# Tests the scene, then records the full switch whenever it changes and commits the MP4s the demo links to.
 name: Export video
 on:
   push:
@@ -43,6 +43,11 @@ jobs:
           CAPTURE_ROOT=. CAPTURE_PATH=/ NODE_PATH="$tools" node tools/capture-switch.cjs zabrze
           "$tools/ffmpeg-static/ffmpeg" -y -framerate 60 -i capture/zabrze/frames/%03d.png -c:v libx264 -crf 18 -pix_fmt yuv420p -movflags +faststart zabrze-day-night-60fps.mp4
           "$tools/ffprobe-static/bin/linux/x64/ffprobe" -v error -select_streams v -show_entries stream=codec_name,width,height,r_frame_rate,nb_frames -of csv=p=0 zabrze-day-night-60fps.mp4
+          test "$(ls capture/zabrze/frames-4x5 | wc -l)" -eq 420
+          "$tools/ffmpeg-static/ffmpeg" -y -framerate 60 -i capture/zabrze/frames-4x5/%03d.png -c:v libx264 -crf 18 -pix_fmt yuv420p -movflags +faststart zabrze-instagram-4x5-60fps.mp4
+          "$tools/ffprobe-static/bin/linux/x64/ffprobe" -v error -select_streams v -show_entries stream=codec_name,width,height,r_frame_rate,nb_frames -of csv=p=0 zabrze-instagram-4x5-60fps.mp4
+          # The cover is the night hold: the lens at rest over the lit city.
+          "$tools/ffmpeg-static/ffmpeg" -y -i capture/zabrze/frames-4x5/210.png -q:v 2 zabrze-instagram-cover.jpg
       - uses: actions/upload-artifact@v5
         if: always()
         with:
@@ -56,11 +61,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          git add zabrze-day-night-60fps.mp4
-          if git diff --cached --quiet; then echo "Video unchanged"; exit 0; fi
+          git add zabrze-day-night-60fps.mp4 zabrze-instagram-4x5-60fps.mp4 zabrze-instagram-cover.jpg
+          if git diff --cached --quiet; then echo "Exports unchanged"; exit 0; fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m "Export the day/night video for ${GITHUB_SHA::7}"
+          git commit -m "Export the day/night videos for ${GITHUB_SHA::7}"
           git pull --rebase origin main
           git push origin HEAD:main
           curl -fsS -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$GITHUB_REPOSITORY/pages/builds" || echo "Pages build request failed; the push may already have triggered one"
