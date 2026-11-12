@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const { chromium } = require('playwright');
 
 // Captures the real full switch: input, persistence, layout and contrast checks, then 420 frames
-// at exactly 1/60 s each. Runs from the central repository (default) or inside a city repository:
+// at exactly 1/60 s each, once at 1600 × 1000 (frames/) and once at 1080 × 1350 (frames-4x5/). Runs from the central repository (default) or inside a city repository:
 //   node tools/capture-switch.cjs <city>                          central: serves repos/<city>-switch/
 //   CAPTURE_ROOT=. CAPTURE_PATH=/ node tools/capture-switch.cjs <city>   city repository
 const city = process.argv[2];
@@ -98,47 +98,59 @@ const first = Math.floor(420 * shard / shards), last = Math.floor(420 * (shard +
       }
     }
 
-    // The recording is an 800 × 500 layout rendered at twice the density: a 1600 × 1000 video.
-    const film = await browser.newPage({ viewport: { width: 800, height: 500 }, deviceScaleFactor: 2, colorScheme: 'light' });
-    film.on('pageerror', (error) => errors.push(error.message));
-    await film.goto(`http://127.0.0.1:8080${pagePath}`, { waitUntil: 'networkidle' });
-    await film.waitForFunction((tag) => document.querySelector(tag).gl, tag, { polling: 100 });
-    await film.addStyleTag({ content: 'section { height: 500px; min-height: 500px; padding: 40px 24px; gap: 24px; } footer { display: none; } .switch { width: 640px; }' });
-    await film.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-    await film.locator(tag).evaluate((el) => {
-      el.jump(false);
-      cancelAnimationFrame(el.raf);
-      el.raf = 0;
-      // Screenshots must advance only the requested frame, regardless of capture speed.
-      el.wake = () => {};
-      el.frame = () => {};
-      el.world = new el.world.constructor();
-      el.time = 0;
-    });
-    for (let frame = 0; frame < last; frame++) {
-      const sceneTime = await film.locator(tag).evaluate((el, [frame, record]) => {
-        const p = frame / 419;
-        const ease = (t) => t * t * (3 - 2 * t);
-        el.branch = p >= .58 ? 'am' : 'pm';
-        el.amStart = 22;
-        el.nightHour = 22;
-        el.x = p < .1 ? 0 : p < .43 ? ease((p - .1) / .33) : p < .58 ? 1 : p < .92 ? 1 - ease((p - .58) / .34) : 0;
-        el.lift = el.x > 0 && el.x < 1 ? .2 : 0;
-        el.time += 1 / 60;
-        el.world.tick(1 / 60, el.hour());
-        el.uploadWorld();
-        el.stepWater(1 / 60, false);
-        el.emitScrub();
-        if (record) el.draw();
-        return el.world.t;
-      }, [frame, frame >= first]);
-      assert.ok(Math.abs(sceneTime - (frame + 1) / 60) < 1e-6, `${city}: capture time drifted`);
-      if (frame < first) continue;
-      await film.screenshot({ path: `${out}/frames/${String(frame).padStart(3, '0')}.png` });
-      if (frame % 60 === 0) console.log(`${city}: ${frame + 1}/420 full-switch frames captured`);
+    // Two recordings of the same deterministic loop, each a layout rendered at twice the density:
+    // 800 × 500 becomes the 1600 × 1000 video, and 540 × 675 the 1080 × 1350 (4:5) Instagram post.
+    // The 4:5 switch is 492 px wide so that Instagram's 3:4 grid crop (506 px) keeps the whole frame.
+    const films = [
+      { dir: 'frames', width: 800, height: 500, css: 'section { height: 500px; min-height: 500px; padding: 40px 24px; gap: 24px; } .switch { width: 640px; }' },
+      { dir: 'frames-4x5', width: 540, height: 675, css: 'section { height: 675px; min-height: 675px; padding: 24px; gap: 48px; } .switch { width: 492px; } city-readout { --readout-clock-font: 500 60px/1.1 ui-monospace, "SF Mono", Menlo, monospace; --readout-place-size: 19px; --readout-gap: 26px; --readout-padding: 14px 22px; }' },
+    ];
+    for (const { dir, width, height, css } of films) {
+      fs.mkdirSync(`${out}/${dir}`, { recursive: true });
+      const film = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 2, colorScheme: 'light' });
+      film.on('pageerror', (error) => errors.push(error.message));
+      await film.goto(`http://127.0.0.1:8080${pagePath}`, { waitUntil: 'networkidle' });
+      await film.waitForFunction((tag) => document.querySelector(tag).gl, tag, { polling: 100 });
+      await film.addStyleTag({ content: `footer { display: none; } ${css}` });
+      await film.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      const box = await film.locator(tag).boundingBox();
+      assert.ok(box.x >= 0 && box.y >= 0 && box.x + box.width <= width && box.y + box.height <= height, `${city}: switch clipped in the ${width} × ${height} recording`);
+      await film.locator(tag).evaluate((el) => {
+        el.jump(false);
+        cancelAnimationFrame(el.raf);
+        el.raf = 0;
+        // Screenshots must advance only the requested frame, regardless of capture speed.
+        el.wake = () => {};
+        el.frame = () => {};
+        el.world = new el.world.constructor();
+        el.time = 0;
+      });
+      for (let frame = 0; frame < last; frame++) {
+        const sceneTime = await film.locator(tag).evaluate((el, [frame, record]) => {
+          const p = frame / 419;
+          const ease = (t) => t * t * (3 - 2 * t);
+          el.branch = p >= .58 ? 'am' : 'pm';
+          el.amStart = 22;
+          el.nightHour = 22;
+          el.x = p < .1 ? 0 : p < .43 ? ease((p - .1) / .33) : p < .58 ? 1 : p < .92 ? 1 - ease((p - .58) / .34) : 0;
+          el.lift = el.x > 0 && el.x < 1 ? .2 : 0;
+          el.time += 1 / 60;
+          el.world.tick(1 / 60, el.hour());
+          el.uploadWorld();
+          el.stepWater(1 / 60, false);
+          el.emitScrub();
+          if (record) el.draw();
+          return el.world.t;
+        }, [frame, frame >= first]);
+        assert.ok(Math.abs(sceneTime - (frame + 1) / 60) < 1e-6, `${city}: capture time drifted`);
+        if (frame < first) continue;
+        await film.screenshot({ path: `${out}/${dir}/${String(frame).padStart(3, '0')}.png` });
+        if (frame % 60 === 0) console.log(`${city}: ${frame + 1}/420 ${width * 2} × ${height * 2} frames captured`);
+      }
+      await film.close();
     }
     assert.deepEqual(errors, [], 'no runtime errors or missing assets');
-    if (first === 0) fs.writeFileSync(`${out}/checks.json`, JSON.stringify({ city, sourceFrames: 420, sourceFps: 60, seconds: 7, outputWidth: 1600, outputHeight: 1000, readoutContrast: true, deterministicTime: true, pointer: true, drag: true, keyboard: true, reducedMotion: true, persistence: true, widths: [960, 390, 320], errors }, null, 2));
+    if (first === 0) fs.writeFileSync(`${out}/checks.json`, JSON.stringify({ city, sourceFrames: 420, sourceFps: 60, seconds: 7, outputWidth: 1600, outputHeight: 1000, instagram: { dir: 'frames-4x5', width: 1080, height: 1350 }, readoutContrast: true, deterministicTime: true, pointer: true, drag: true, keyboard: true, reducedMotion: true, persistence: true, widths: [960, 390, 320], errors }, null, 2));
     console.log(first === 0 ? `${city}: real WebGL control, input, persistence, reduced motion and responsive checks passed` : `${city}: frames ${first + 1}–${last} recorded`);
   } finally {
     await browser.close();

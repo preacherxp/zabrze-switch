@@ -307,8 +307,10 @@ Use a short, repeatable check and keep evidence of what actually ran.
 
 - Each city repository has an **Export video** workflow. On every push to `main`
   that changes the engine, scene or demo, it runs the scene test, the composition
-  check and `tools/capture-switch.cjs`, encodes `<city>-day-night-60fps.mp4` and
-  commits it if it changed. The central repository takes a city only after this
+  check and `tools/capture-switch.cjs`, encodes `<city>-day-night-60fps.mp4`
+  (1600 × 1000), `<city>-instagram-4x5-60fps.mp4` (1080 × 1350) and
+  `<city>-instagram-cover.jpg` (a night-hold still at 1080 × 1350), and commits them
+  if they changed. The central repository takes a city only after this
   run has passed. Do not commit hand-made exports over it; run the workflow
   manually to refresh a video.
 - When asked for a switch GIF/video, capture the **actual browser-rendered full
