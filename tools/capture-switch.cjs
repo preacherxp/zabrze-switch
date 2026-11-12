@@ -122,8 +122,24 @@ const first = Math.floor(420 * shard / shards), last = Math.floor(420 * (shard +
         // Screenshots must advance only the requested frame, regardless of capture speed.
         el.wake = () => {};
         el.frame = () => {};
-        el.world = new el.world.constructor();
-        el.time = 0;
+        // Parallel jobs each replay the loop from a fresh page, so anything random (Warsaw's scene,
+        // the raindrops on rain glass) must draw the same numbers in every job, or the video jumps
+        // where one job's frames meet the next. Seed it, and reset the glass state the live page left.
+        // The phase covers call this again, so each starts from the same state as well.
+        window.reseed = () => {
+          let seed = 0x5eed;
+          Math.random = () => {
+            seed = (seed + 0x6d2b79f5) | 0;
+            let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+            t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+          };
+          el.wipe.fill(0);
+          el.runners = Array.from({ length: el.runners.length }, () => ({ x: 0, y: 0, r: 0, wait: Math.random() * 6, v: 0 }));
+          el.world = new el.world.constructor();
+          el.time = 0;
+        };
+        window.reseed();
       });
       for (let frame = 0; frame < last; frame++) {
         const sceneTime = await film.locator(tag).evaluate((el, [frame, record]) => {
@@ -147,10 +163,46 @@ const first = Math.floor(420 * shard / shards), last = Math.floor(420 * (shard +
         await film.screenshot({ path: `${out}/${dir}/${String(frame).padStart(3, '0')}.png` });
         if (frame % 60 === 0) console.log(`${city}: ${frame + 1}/420 ${width * 2} × ${height * 2} frames captured`);
       }
+      // One 4:5 cover for every phase the readout names, in the order the loop passes them. Each
+      // is a fresh scene run for three seconds at that hour with the lens at rest: deterministic,
+      // so an unchanged scene exports byte-identical covers.
+      if (dir === 'frames-4x5' && first === 0) {
+        fs.mkdirSync(`${out}/covers`, { recursive: true });
+        // Afternoon hours are 12 + 10x on the pm branch; morning hours 36 - 14x on the am branch.
+        for (const [name, phase, branch, x] of [
+          ['1-daytime', 'Daytime', 'pm', 0], ['2-golden-hour', 'Golden hour', 'pm', .5],
+          ['3-signs-coming-on', 'Signs coming on', 'pm', .675], ['4-night', 'Night', 'pm', 1],
+          ['5-dawn', 'Dawn', 'am', 6 / 14], ['6-morning', 'Morning', 'am', 3.5 / 14],
+        ]) {
+          const shown = await film.locator(tag).evaluate((el, [branch, x]) => {
+            window.reseed();
+            el.branch = branch;
+            el.amStart = 22;
+            el.nightHour = 22;
+            el.x = x;
+            el.lift = 0;
+            el.settleGroups();
+            for (let frame = 0; frame < 180; frame++) {
+              el.time += 1 / 60;
+              el.world.tick(1 / 60, el.hour());
+              el.stepWater(1 / 60, false);
+            }
+            el.uploadWorld();
+            el.emitScrub();
+            el.draw();
+            return document.querySelector('city-readout').shadowRoot.querySelector('.phase').textContent;
+          }, [branch, x]);
+          assert.equal(shown, phase, `${city}: the ${name} cover shows ${shown}`);
+          // Let the compositor present the new canvas, or the shot can catch the previous frame.
+          await film.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+          await film.screenshot({ path: `${out}/covers/${name}.png` });
+        }
+        console.log(`${city}: 6 phase covers captured`);
+      }
       await film.close();
     }
     assert.deepEqual(errors, [], 'no runtime errors or missing assets');
-    if (first === 0) fs.writeFileSync(`${out}/checks.json`, JSON.stringify({ city, sourceFrames: 420, sourceFps: 60, seconds: 7, outputWidth: 1600, outputHeight: 1000, instagram: { dir: 'frames-4x5', width: 1080, height: 1350 }, readoutContrast: true, deterministicTime: true, pointer: true, drag: true, keyboard: true, reducedMotion: true, persistence: true, widths: [960, 390, 320], errors }, null, 2));
+    if (first === 0) fs.writeFileSync(`${out}/checks.json`, JSON.stringify({ city, sourceFrames: 420, sourceFps: 60, seconds: 7, outputWidth: 1600, outputHeight: 1000, instagram: { dir: 'frames-4x5', covers: 'covers', width: 1080, height: 1350 }, readoutContrast: true, deterministicTime: true, pointer: true, drag: true, keyboard: true, reducedMotion: true, persistence: true, widths: [960, 390, 320], errors }, null, 2));
     console.log(first === 0 ? `${city}: real WebGL control, input, persistence, reduced motion and responsive checks passed` : `${city}: frames ${first + 1}–${last} recorded`);
   } finally {
     await browser.close();

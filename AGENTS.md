@@ -309,7 +309,9 @@ Use a short, repeatable check and keep evidence of what actually ran.
   that changes the engine, scene or demo, it runs the scene test, the composition
   check and `tools/capture-switch.cjs`, encodes `<city>-day-night-60fps.mp4`
   (1600 × 1000), `<city>-instagram-4x5-60fps.mp4` (1080 × 1350) and
-  `<city>-instagram-cover.jpg` (a night-hold still at 1080 × 1350), and commits them
+  `<city>-instagram-cover.jpg` (a night-hold still at 1080 × 1350) and six phase
+  covers, `<city>-instagram-cover-<n>-<phase>.jpg`, one per readout phase with the
+  lens at rest, and commits them
   if they changed. The central repository takes a city only after this
   run has passed. Do not commit hand-made exports over it; run the workflow
   manually to refresh a video.
