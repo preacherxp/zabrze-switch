@@ -2,7 +2,7 @@
 
 Contemporary Zabrze in a pixel-art day/night switch: the restored Carboneum water tower and its modern glass lift, Strefa Carnall visitor heritage, the modern Arena Zabrze exterior, and Dom Muzyki i Tańca.
 
-[Live demo](https://preacherxp.github.io/zabrze-switch/) · [Download 60 fps MP4](zabrze-day-night-60fps.mp4) · [Download Instagram 4:5 MP4](zabrze-instagram-4x5-60fps.mp4) · [Download Instagram cover](zabrze-instagram-cover.jpg)
+[Live demo](https://preacherxp.github.io/zabrze-switch/) · [Download 60 fps MP4](zabrze-day-night-60fps.mp4) · [Download Instagram 4:5 MP4](zabrze-instagram-4x5-60fps.mp4) · [Download Instagram cover](zabrze-instagram-cover.jpg) · Phase covers: [day](zabrze-instagram-cover-1-daytime.jpg), [golden hour](zabrze-instagram-cover-2-golden-hour.jpg), [signs on](zabrze-instagram-cover-3-signs-coming-on.jpg), [night](zabrze-instagram-cover-4-night.jpg), [dawn](zabrze-instagram-cover-5-dawn.jpg), [morning](zabrze-instagram-cover-6-morning.jpg)
 
 The seven-second, 1600 × 1000 H.264 recording includes the entire animated switch, frame and moving glass lens.
 

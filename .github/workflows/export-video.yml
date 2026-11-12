@@ -12,21 +12,27 @@ concurrency:
   group: export-video
   cancel-in-progress: true
 jobs:
-  export:
+  # Four jobs record a quarter of the frames each; the first also tests the scene and the control.
+  record:
     runs-on: ubuntu-latest
     # Chromium and its system libraries come ready in this image, so nothing is installed with apt.
     container: mcr.microsoft.com/playwright:v1.56.1-noble
-    timeout-minutes: 45
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        shard: [0, 1, 2, 3]
     defaults:
       run:
         shell: bash
     steps:
       - uses: actions/checkout@v6
       - uses: actions/checkout@v6
+        if: matrix.shard == 0
         with:
           repository: preacherxp/city-switches
           path: .central
       - name: Test the scene and its composition
+        if: matrix.shard == 0
         run: |
           if [ -f test-scene.cjs ]; then node test-scene.cjs; fi
           # The composition check reads a city from the central layout, so stand this checkout in it.
@@ -34,13 +40,36 @@ jobs:
           ln -s "$PWD" .central/repos/zabrze-switch
           node .central/tools/check-composition.cjs zabrze
           rm -rf .central
-      - name: Install the recorder, encoder and a static server
-        run: npm install --prefix "$RUNNER_TEMP/recording" playwright@1.56.1 ffmpeg-static@5 ffprobe-static@3 http-server@14
+      - name: Install the recorder and a static server
+        run: npm install --prefix "$RUNNER_TEMP/recording" playwright@1.56.1 http-server@14
       - name: Review and capture the full switch
+        env:
+          CAPTURE_SHARD: ${{ matrix.shard }}/4
         run: |
           tools="$RUNNER_TEMP/recording/node_modules"
           "$tools/.bin/http-server" . -p 8080 -c-1 > "$RUNNER_TEMP/http.log" 2>&1 &
           CAPTURE_ROOT=. CAPTURE_PATH=/ NODE_PATH="$tools" node tools/capture-switch.cjs zabrze
+      - uses: actions/upload-artifact@v5
+        with:
+          name: frames-${{ matrix.shard }}
+          path: capture/zabrze/
+          retention-days: 1
+  export:
+    needs: record
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v5
+        with:
+          pattern: frames-*
+          path: capture/zabrze
+          merge-multiple: true
+      - name: Encode the videos and the cover
+        run: |
+          npm install --prefix "$RUNNER_TEMP/encoder" ffmpeg-static@5 ffprobe-static@3
+          tools="$RUNNER_TEMP/encoder/node_modules"
+          test "$(ls capture/zabrze/frames | wc -l)" -eq 420
           "$tools/ffmpeg-static/ffmpeg" -y -framerate 60 -i capture/zabrze/frames/%03d.png -c:v libx264 -crf 18 -pix_fmt yuv420p -movflags +faststart zabrze-day-night-60fps.mp4
           "$tools/ffprobe-static/bin/linux/x64/ffprobe" -v error -select_streams v -show_entries stream=codec_name,width,height,r_frame_rate,nb_frames -of csv=p=0 zabrze-day-night-60fps.mp4
           test "$(ls capture/zabrze/frames-4x5 | wc -l)" -eq 420
@@ -48,8 +77,10 @@ jobs:
           "$tools/ffprobe-static/bin/linux/x64/ffprobe" -v error -select_streams v -show_entries stream=codec_name,width,height,r_frame_rate,nb_frames -of csv=p=0 zabrze-instagram-4x5-60fps.mp4
           # The cover is the night hold: the lens at rest over the lit city.
           "$tools/ffmpeg-static/ffmpeg" -y -i capture/zabrze/frames-4x5/210.png -q:v 2 zabrze-instagram-cover.jpg
+          # One cover per phase the readout names, rendered with the lens at rest.
+          test "$(ls capture/zabrze/covers | wc -l)" -eq 6
+          for phase in 1-daytime 2-golden-hour 3-signs-coming-on 4-night 5-dawn 6-morning; do "$tools/ffmpeg-static/ffmpeg" -v error -y -i capture/zabrze/covers/$phase.png -q:v 2 zabrze-instagram-cover-$phase.jpg; done
       - uses: actions/upload-artifact@v5
-        if: always()
         with:
           name: zabrze-review
           path: |
@@ -60,12 +91,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          git add zabrze-day-night-60fps.mp4 zabrze-instagram-4x5-60fps.mp4 zabrze-instagram-cover.jpg
+          git add zabrze-day-night-60fps.mp4 zabrze-instagram-4x5-60fps.mp4 zabrze-instagram-cover.jpg zabrze-instagram-cover-*.jpg
           if git diff --cached --quiet; then echo "Exports unchanged"; exit 0; fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m "Export the day/night videos for ${GITHUB_SHA::7}"
           git pull --rebase origin main
           git push origin HEAD:main
-          curl -fsS -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$GITHUB_REPOSITORY/pages/builds" || echo "Pages build request failed; the push may already have triggered one"
+          gh api -X POST "repos/$GITHUB_REPOSITORY/pages/builds" || echo "Pages build request failed; the push may already have triggered one"
