@@ -109,6 +109,14 @@ const first = Math.floor(420 * shard / shards), last = Math.floor(420 * (shard +
       fs.mkdirSync(`${out}/${dir}`, { recursive: true });
       const film = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 2, colorScheme: 'light' });
       film.on('pageerror', (error) => errors.push(error.message));
+      // Frames are grabbed through Chrome directly with fast PNG compression: the same lossless pixels as
+      // page.screenshot(), in about half the time, since compressing the PNG was half of every frame.
+      // captureBeyondViewport keeps the whole layout when it is taller than the headless window.
+      const cdp = await film.context().newCDPSession(film);
+      const grab = async (path) => {
+        const { data } = await cdp.send('Page.captureScreenshot', { format: 'png', optimizeForSpeed: true, captureBeyondViewport: true, clip: { x: 0, y: 0, width, height, scale: 2 } });
+        fs.writeFileSync(path, Buffer.from(data, 'base64'));
+      };
       await film.goto(`http://127.0.0.1:8080${pagePath}`, { waitUntil: 'networkidle' });
       await film.waitForFunction((tag) => document.querySelector(tag).gl, tag, { polling: 100 });
       await film.addStyleTag({ content: `footer { display: none; } ${css}` });
@@ -160,7 +168,7 @@ const first = Math.floor(420 * shard / shards), last = Math.floor(420 * (shard +
         }, [frame, frame >= first]);
         assert.ok(Math.abs(sceneTime - (frame + 1) / 60) < 1e-6, `${city}: capture time drifted`);
         if (frame < first) continue;
-        await film.screenshot({ path: `${out}/${dir}/${String(frame).padStart(3, '0')}.png` });
+        await grab(`${out}/${dir}/${String(frame).padStart(3, '0')}.png`);
         if (frame % 60 === 0) console.log(`${city}: ${frame + 1}/420 ${width * 2} × ${height * 2} frames captured`);
       }
       // One 4:5 cover for every phase the readout names, in the order the loop passes them. Each
